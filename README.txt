@@ -7,5 +7,9 @@ pillow
 
  === Change log ===
 
+v0.2 (CURRENT)
+Added a few of things.
+Added update notifications!
+
 v0.1
 First release!
