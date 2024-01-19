@@ -18,18 +18,19 @@ with open("config.ini") as conf:
         key = i.split("=")[0]
         value = eval(i.split("=")[1])
         config[key] = value
-        
+
 version = config["version"]
 fullscreen = config["fullscreen"]
 
 def queryMousePosition():
-    x = root.winfo_pointerx() - root.winfo_rootx()
-    y = root.winfo_pointery() - root.winfo_rooty()
-    if x > -1 and y > -1 and x < root.winfo_width()+1 and y < root.winfo_height()+1:
-        return (x, y)
+    curx = root.winfo_pointerx() - root.winfo_rootx()
+    cury = root.winfo_pointery() - root.winfo_rooty()
+    if curx > -1 and cury > -1 and curx < root.winfo_width()+1 \
+       and cury < root.winfo_height()+1:
+        return (curx, cury)
     else:
         return (root.winfo_width()//2,root.winfo_height()//2)
-        
+
 
 def get_mouse_direction(point, mouse_position, threshold):
     x_diff = mouse_position[0] - point[0]
@@ -129,7 +130,7 @@ def limit(val,lim):
         return 0
 
 def updanim():
-    global frame, action,run 
+    global frame, action,run
     frame += 1
     if frame > 2:
         frame = 1
@@ -137,10 +138,12 @@ def updanim():
             action = "still"
             logger.info("Yawned")
         rand = random.random()
-        if action.lower() == "still" and rand < 0.3:  # Doesnt even do anything? Stays always false??
+        if action.lower() == "still" and rand < 0.3:
             action = random.choice(actions)
             logger.info("Started random action: "+action)
-        if action.lower() in ("scratch","sleep","downclaw","upclaw","leftclaw","rightclaw") and random.random() < 0.1:
+        if action.lower() in ("scratch","sleep","downclaw",
+                              "upclaw","leftclaw",
+                              "rightclaw") and random.random() < 0.1:
             logger.info("Stopped current action: "+action)
             action = "still"
     # Show alert action, then after some time, chase the mouse
@@ -165,7 +168,7 @@ def updanim():
             root.after(200)
     else:
         canvas.itemconfig(me, image=nekosprites[f"{action}.png"])
-    
+
     root.after(animspeed * 10, updanim)
 
 
@@ -196,10 +199,15 @@ def quitneko():
 
 def checkupd():
     r = requests.get("https://raw.githubusercontent.com/simpleuserdontwatch/PyNeko/main/neko.pyw")
-    ver = requests.get("https://raw.githubusercontent.com/simpleuserdontwatch/PyNeko/main/version.txt")
+    ver = requests.get(
+        "https://raw.githubusercontent.com/simpleuserdontwatch/PyNeko/main/version.txt"
+                       )
     if float(ver.text.split('\n')[0]) > version:
         messagebox.showinfo(title="Neko",message="Yay! An new update is available!")
-        if messagebox.askquestion("Neko",message="Do you want to download it into other file?") == "yes":
+        ques = messagebox.askquestion("Neko",
+                                      message="Do you want to download it into other file?"
+                                      )
+        if ques == "yes":
             with open("update.pyw","a+") as f:
                 f.write(r.text)
     else:
@@ -224,8 +232,8 @@ neko_menu.add_command(label="Sleep",command=sleep)
 neko_menu.add_command(label="Quit",command=quitneko)
 
 
-def showMenu(e):
-    neko_menu.post(e.x_root, e.y_root)
+def showMenu(event):
+    neko_menu.post(event.x_root, event.y_root)
 
 canvas.tag_bind(me, '<Button-1>', showMenu)
 
