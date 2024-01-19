@@ -1,41 +1,34 @@
-from ctypes import windll, Structure, c_long, byref, CDLL
 from tkinter import *
 from PIL import Image, ImageTk
 import glob
-import os
 import logging
 import random
 from time import gmtime, strftime
-import requests
-import inspect,os
+reqs = True
+try:
+    import requests
+except:
+    reqs = False
 from tkinter import messagebox
 
-version = 0.2
+config = {}
 
-if os.name != "nt": # gotta support linux bros :thumbs-up:
-    Xlib = CDLL("libX11.so.6")
-
-class POINT(Structure):
-    _fields_ = [("x", c_long), ("y", c_long)]
-
+with open("config.ini") as conf:
+    for i in conf.read().splitlines():
+        key = i.split("=")[0]
+        value = eval(i.split("=")[1])
+        config[key] = value
+        
+version = config["version"]
+fullscreen = config["fullscreen"]
 
 def queryMousePosition():
-    if os.name == "nt": # Windows
-        pt = POINT()
-        windll.user32.GetCursorPos(byref(pt))
-        return (pt.x, pt.y)
-    else: # LinLinux
-        display = Xlib.XOpenDisplay(None)
-        if display == 0: sys.exit(2)
-        w = Xlib.XRootWindow(display, c_int(0))
-        (root_id, child_id) = (c_uint32(), c_uint32())
-        (root_x, root_y, win_x, win_y) = (c_int(), c_int(), c_int(), c_int())
-        mask = c_uint()
-        ret = Xlib.XQueryPointer(display, c_uint32(w), byref(root_id), byref(child_id),
-                                 byref(root_x), byref(root_y),
-                                 byref(win_x), byref(win_y), byref(mask))
-        if ret == 0: sys.exit(1)
-        return (root_x, root_y)
+    x = root.winfo_pointerx() - root.winfo_rootx()
+    y = root.winfo_pointery() - root.winfo_rooty()
+    if x > -1 and y > -1 and x < root.winfo_width()+1 and y < root.winfo_height()+1:
+        return (x, y)
+    else:
+        return (root.winfo_width()//2,root.winfo_height()//2)
         
 
 def get_mouse_direction(point, mouse_position, threshold):
@@ -67,8 +60,12 @@ def cut(string):
 run = False
 
 root = Tk()
-sw = root.winfo_screenwidth()
-sh = root.winfo_screenheight()
+if fullscreen:
+    sw = root.winfo_screenwidth()
+    sh = root.winfo_screenheight()
+else:
+    sw = 200
+    sh = 200
 
 logging.basicConfig(level=logging.INFO,filename="AppLog.log",
                     filemode='w',)  # Set the logging level to INFO, and write to file
@@ -94,8 +91,12 @@ icon = nekosprites["still.png"]
 root.title("Neko")
 root.wm_iconphoto(True, icon)
 root.attributes("-topmost", True)
-root.attributes('-transparentcolor', 'lime')
-root.attributes("-fullscreen", True)
+if fullscreen:
+    root.attributes('-transparentcolor', 'lime')
+    root.attributes("-fullscreen", True)
+else:
+    canvas.config(bg="lightgrey")
+    root.geometry("300x200")
 
 me = canvas.create_image(nekox,nekoy,image=nekosprites["still.png"])
 
@@ -107,7 +108,7 @@ p = tuple(i-c for i,c in zip(mouse,(nekox,nekoy)))
 go = tuple(min(x, 20) for x in p)
 
 animspeed = 20 # lower = faster
-thr = 15 # Thereshold. Decides on what distance neko should chase mouse
+thr = 17 # Thereshold. Decides on what distance neko should chase mouse
 
 actions = [
     "sleep",
@@ -149,7 +150,7 @@ def updanim():
             logger.info("Going to chase the cursor!")
             canvas.itemconfig(me, image=nekosprites[f"{action}.png"])
             root.update()
-            root.after(400)
+            root.after(300)
     if get_mouse_direction((nekox, nekoy), mouse, thr) == "still":
         if run:
             action = "still"
@@ -211,11 +212,13 @@ def checkupdstart():
         if messagebox.askquestion("Neko",message="Do you wish to download it into other file?") == "yes":
             with open("update.pyw","a+") as f:
                 f.write(r.text)
-            
-checkupdstart()
+
+if reqs:  
+    checkupdstart()
 
 neko_menu = Menu(tearoff=0)
-neko_menu.add_command(label="Check for update",command=checkupd)
+if reqs:
+    neko_menu.add_command(label="Check for update",command=checkupd)
 neko_menu.add_command(label="Send him to his house",command=home)
 neko_menu.add_command(label="Sleep",command=sleep)
 neko_menu.add_command(label="Quit",command=quitneko)

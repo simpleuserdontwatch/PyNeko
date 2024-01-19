@@ -4,10 +4,15 @@ It was only for old OS... so i decided to recreate it for every OS (that support
 
  === Requirements ===
 pillow
+requests (Not really required)
 
  === Change log ===
 
-v0.2 (CURRENT)
+v0.21 (CURRENT)
+Added windowed mode.
+Dont worry, you still can enable fullscreen mode in config.ini.
+
+v0.2
 Added a few of things.
 Added update notifications!
 
