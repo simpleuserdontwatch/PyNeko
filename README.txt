@@ -8,7 +8,12 @@ requests (Not really required)
 
  === Change log ===
 
-v0.21 (CURRENT)
+v0.25
+ = Color update! =
+You can now set your own color for neko!
+By just editing the config.ini file!
+
+v0.21
 Added windowed mode.
 Dont worry, you still can enable fullscreen mode in config.ini.
 

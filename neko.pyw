@@ -1,8 +1,9 @@
 from tkinter import *
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageColor
 import glob
 import logging
 import random
+import numpy as np
 from time import gmtime, strftime
 reqs = True
 try:
@@ -21,6 +22,7 @@ with open("config.ini") as conf:
 
 version = config["version"]
 fullscreen = config["fullscreen"]
+color = config["nekocolor"]
 
 def queryMousePosition():
     curx = root.winfo_pointerx() - root.winfo_rootx()
@@ -31,6 +33,14 @@ def queryMousePosition():
     else:
         return (root.winfo_width()//2,root.winfo_height()//2)
 
+def convcolor(img, col):
+    orig_color = (255, 255, 255, 255)
+    replacement_color = ImageColor.getrgb(col) + (255,)
+    data = np.array(img.convert('RGBA'))
+    orig_color = np.array(orig_color).reshape(1, 1, -1)
+    data[(data == orig_color).all(axis=-1)] = replacement_color
+    img2 = Image.fromarray(data, mode='RGBA')
+    return img2
 
 def get_mouse_direction(point, mouse_position, threshold):
     x_diff = mouse_position[0] - point[0]
@@ -83,7 +93,7 @@ canvas = Canvas(root,bg="lime", borderwidth=0, highlightthickness=0)
 canvas.pack(expand=True,fill=BOTH)
 
 nekosprites = {
-    cut(i): ImageTk.PhotoImage(Image.open(i)) for i in glob.glob("nekoimages/*.png")
+    cut(i): ImageTk.PhotoImage(convcolor(Image.open(i), color)) for i in glob.glob("nekoimages/*.png")
 }
 
 icon = nekosprites["still.png"]
@@ -221,6 +231,9 @@ def checkupdstart():
             with open("update.pyw","a+") as f:
                 f.write(r.text)
 
+
+
+    
 if reqs:  
     checkupdstart()
 
