@@ -5,6 +5,7 @@ It was only for old OS... so i decided to recreate it for every OS (that support
  === Requirements ===
 pillow
 requests (Not really required)
+numpy
 
  === Change log ===
 
