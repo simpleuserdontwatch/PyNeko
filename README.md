@@ -1,5 +1,5 @@
 # PyNeko
-![Neko](nekoimages/still.png)\
+![funny goofy ahh cat (who the hell even reads this)](nekoimages/still.png)\
 This is just a simple recreation of good ol' program "Neko"
 It was only for old OS... so i decided to recreate it for every OS (that supports python) on python!
 
