@@ -1,9 +1,10 @@
 from tkinter import *
-from PIL import Image, ImageTk, ImageColor
+from PIL import Image, ImageTk, ImageColor, ImageFilter
 import glob
 import logging
 import random
 import numpy as np
+import traceback
 from time import gmtime, strftime
 reqs = True
 try:
@@ -12,17 +13,27 @@ except:
     reqs = False
 from tkinter import messagebox
 
+logging.basicConfig(level=logging.INFO,filename="AppLog.log",
+                    filemode='w',)  # Set the logging level to INFO, and write to file
+
+logger = logging.getLogger("Neko")
+
 config = {}
 
-with open("config.ini") as conf:
-    for i in conf.read().splitlines():
-        key = i.split("=")[0]
-        value = eval(i.split("=")[1])
-        config[key] = value
+try:
+    with open("config.ini") as conf:
+        for i in conf.read().splitlines():
+            key = i.split("=")[0]
+            value = eval(i.split("=")[1])
+            config[key] = value
+except:
+    logger.error(traceback.format_exc())
 
-version = config["version"]
-fullscreen = config["fullscreen"]
-color = config["nekocolor"]
+version = config.get("version",1349139)
+fullscreen = config.get("fullscreen",True)
+color = config.get("nekocolor","white")
+speed = config.get("nekosize",32)/32
+actualspeed = config.get("nekospeed",7)
 
 def queryMousePosition():
     curx = root.winfo_pointerx() - root.winfo_rootx()
@@ -35,7 +46,11 @@ def queryMousePosition():
 
 def convcolor(img, col):
     orig_color = (255, 255, 255, 255)
-    replacement_color = ImageColor.getrgb(col) + (255,)
+    try:
+        replacement_color = ImageColor.getrgb(col) + (255,)
+    except:
+        logger.error(traceback.format_exc())
+        return img
     data = np.array(img.convert('RGBA'))
     orig_color = np.array(orig_color).reshape(1, 1, -1)
     data[(data == orig_color).all(axis=-1)] = replacement_color
@@ -78,12 +93,6 @@ else:
     sw = 200
     sh = 200
 
-logging.basicConfig(level=logging.INFO,filename="AppLog.log",
-                    filemode='w',)  # Set the logging level to INFO, and write to file
-
-frame = 1
-
-logger = logging.getLogger("Neko")
 logger.info("Started at "+strftime("%Y-%m-%d %H:%M:%S", gmtime()))
 
 nekox,nekoy = sw//2, sh//2
@@ -93,13 +102,17 @@ canvas = Canvas(root,bg="lime", borderwidth=0, highlightthickness=0)
 canvas.pack(expand=True,fill=BOTH)
 
 nekosprites = {
-    cut(i): ImageTk.PhotoImage(convcolor(Image.open(i), color)) for i in glob.glob("nekoimages/*.png")
+    cut(i): ImageTk.PhotoImage(convcolor(Image.open(i), color).resize((config.get("nekosize",32),config.get("nekosize",32)), resample=Image.NEAREST)) for i in glob.glob("nekoimages/*.png")
 }
-
-icon = nekosprites["still.png"]
 
 
 root.title("Neko")
+rgb = ImageColor.getrgb(color)
+if rgb[0] < 80 and rgb[1] < 80 and rgb[2] < 80:
+    root.title("Neko?")
+
+icon = nekosprites["still.png"]
+
 root.wm_iconphoto(True, icon)
 root.attributes("-topmost", True)
 if fullscreen:
@@ -108,8 +121,12 @@ if fullscreen:
 else:
     canvas.config(bg="lightgrey")
     root.geometry("300x200")
+    if config.get('toolwindow', True):
+        root.attributes('-toolwindow', True)
 
 me = canvas.create_image(nekox,nekoy,image=nekosprites["still.png"])
+
+frame = 1
 
 canvas.itemconfig(me, image=nekosprites["E2.png"])
 
@@ -118,7 +135,7 @@ action = get_mouse_direction((nekox,nekoy),mouse,50)
 p = tuple(i-c for i,c in zip(mouse,(nekox,nekoy)))
 go = tuple(min(x, 20) for x in p)
 
-animspeed = 20 # lower = faster
+animspeed = 19 # lower = faster
 thr = 17 # Thereshold. Decides on what distance neko should chase mouse
 
 actions = [
@@ -185,23 +202,12 @@ def updanim():
 def update():
     global nekox,nekoy,p,go,mouse
     p = tuple(i-c for i,c in zip(mouse,(nekox,nekoy)))
-    go = tuple(limit(x, 10) for x in p)
+    go = tuple(limit(x, actualspeed*speed) for x in p)
     if get_mouse_direction((nekox, nekoy), mouse, thr) != "still":
         nekox,nekoy = tuple(i+c for i,c in zip(go,(nekox,nekoy)))
         canvas.move(me, *go)
     mouse = queryMousePosition()
-    root.after(100,update)
-
-def home():
-    global mouse
-    mouse = (-100,-100)
-    root.after(10,home)
-
-def sleep():
-    global action
-    if action == "still":
-        action = "sleep"
-    root.after(animspeed * 9, sleep)
+    root.after(60,update)
 
 def quitneko():
     root.destroy()
@@ -240,8 +246,6 @@ if reqs:
 neko_menu = Menu(tearoff=0)
 if reqs:
     neko_menu.add_command(label="Check for update",command=checkupd)
-neko_menu.add_command(label="Send him to his house",command=home)
-neko_menu.add_command(label="Sleep",command=sleep)
 neko_menu.add_command(label="Quit",command=quitneko)
 
 
