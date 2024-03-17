@@ -6,11 +6,6 @@ import random
 import numpy as np
 import traceback
 from time import gmtime, strftime
-reqs = True
-try:
-    import requests
-except:
-    reqs = False
 from tkinter import messagebox
 
 logging.basicConfig(level=logging.INFO,filename="AppLog.log",
@@ -213,39 +208,8 @@ def quitneko():
     root.destroy()
     logger.info("Quited.")
 
-def checkupd():
-    r = requests.get("https://raw.githubusercontent.com/simpleuserdontwatch/PyNeko/main/neko.pyw")
-    ver = requests.get(
-        "https://raw.githubusercontent.com/simpleuserdontwatch/PyNeko/main/version.txt"
-                       )
-    if float(ver.text.split('\n')[0]) > version:
-        messagebox.showinfo(title="Neko",message="Yay! An new update is available!")
-        ques = messagebox.askquestion("Neko",
-                                      message="Do you want to download it into other file?"
-                                      )
-        if ques == "yes":
-            with open("update.pyw","a+") as f:
-                f.write(r.text)
-    else:
-        messagebox.showinfo(title="Neko",message="No updates.")
-def checkupdstart():
-    r = requests.get("https://raw.githubusercontent.com/simpleuserdontwatch/PyNeko/main/neko.pyw")
-    ver = requests.get("https://raw.githubusercontent.com/simpleuserdontwatch/PyNeko/main/version.txt")
-    if float(ver.text.split('\n')[0]) > version:
-        messagebox.showinfo(title="Neko",message="Yay! An new update is available!")
-        if messagebox.askquestion("Neko",message="Do you wish to download it into other file?") == "yes":
-            with open("update.pyw","a+") as f:
-                f.write(r.text)
-
-
-
-    
-if reqs:  
-    checkupdstart()
 
 neko_menu = Menu(tearoff=0)
-if reqs:
-    neko_menu.add_command(label="Check for update",command=checkupd)
 neko_menu.add_command(label="Quit",command=quitneko)
 
 
