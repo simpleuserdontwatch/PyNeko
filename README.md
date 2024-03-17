@@ -1,13 +1,5 @@
----
-attachments: [still.png]
-tags: [Import-2962]
-title: PyNeko
-created: '2024-03-09T11:50:36.074Z'
-modified: '2024-03-17T09:45:00.726Z'
----
-
 # PyNeko
-![Neko](nekoimages/still.png)
+![Neko](nekoimages/still.png)\
 This is just a simple recreation of good ol' program "Neko"
 It was only for old OS... so i decided to recreate it for every OS (that supports python) on python!
 
