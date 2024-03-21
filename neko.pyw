@@ -7,9 +7,12 @@ import numpy as np
 import traceback
 from time import gmtime, strftime
 from tkinter import messagebox
+import os
+
+path = os.path.dirname(os.path.abspath(__file__))
 
 logging.basicConfig(level=logging.INFO,filename="AppLog.log",
-                    filemode='w',)  # Set the logging level to INFO, and write to file
+                    filemode='a+',)  # Set the logging level to INFO, and write to file
 
 logger = logging.getLogger("Neko")
 
@@ -29,6 +32,7 @@ fullscreen = config.get("fullscreen",True)
 color = config.get("nekocolor","white")
 speed = config.get("nekosize",32)/32
 actualspeed = config.get("nekospeed",7)
+hideicon = config.get("hideicon",True)
 
 def queryMousePosition():
     curx = root.winfo_pointerx() - root.winfo_rootx()
@@ -76,7 +80,7 @@ def get_mouse_direction(point, mouse_position, threshold):
         return "still"
 
 def cut(string):
-    return string.replace('nekoimages/','').replace('nekoimages\\','')
+    return string.replace("\\",'/').split("/")[-1]
 
 run = False
 
@@ -97,22 +101,23 @@ canvas = Canvas(root,bg="lime", borderwidth=0, highlightthickness=0)
 canvas.pack(expand=True,fill=BOTH)
 
 nekosprites = {
-    cut(i): ImageTk.PhotoImage(convcolor(Image.open(i), color).resize((config.get("nekosize",32),config.get("nekosize",32)), resample=Image.NEAREST)) for i in glob.glob("nekoimages/*.png")
+    cut(i): ImageTk.PhotoImage(convcolor(Image.open(i), color).resize((config.get("nekosize",32),config.get("nekosize",32)), resample=Image.NEAREST)) for i in glob.glob(path+"/nekoimages/*.png")
 }
-
 
 root.title("Neko")
 rgb = ImageColor.getrgb(color)
 if rgb[0] < 80 and rgb[1] < 80 and rgb[2] < 80:
     root.title("Neko?")
 
-icon = nekosprites["still.png"]
+icon = nekosprites["alert.png"]
 
 root.wm_iconphoto(True, icon)
 root.attributes("-topmost", True)
 if fullscreen:
     root.attributes('-transparentcolor', 'lime')
     root.attributes("-fullscreen", True)
+    if hideicon:
+        root.overrideredirect(1)
 else:
     canvas.config(bg="lightgrey")
     root.geometry("300x200")
@@ -131,7 +136,7 @@ p = tuple(i-c for i,c in zip(mouse,(nekox,nekoy)))
 go = tuple(min(x, 20) for x in p)
 
 animspeed = 19 # lower = faster
-thr = 17 # Thereshold. Decides on what distance neko should chase mouse
+thr = 22 # Thereshold. Decides on what distance neko should chase mouse
 
 actions = [
     "sleep",
@@ -160,7 +165,7 @@ def updanim():
             action = "still"
             logger.info("Yawned")
         rand = random.random()
-        if action.lower() == "still" and rand < 0.3:
+        if action.lower() == "still" and rand < 0.2:
             action = random.choice(actions)
             logger.info("Started random action: "+action)
         if action.lower() in ("scratch","sleep","downclaw",
@@ -175,7 +180,7 @@ def updanim():
             logger.info("Going to chase the cursor!")
             canvas.itemconfig(me, image=nekosprites[f"{action}.png"])
             root.update()
-            root.after(300)
+            root.after(250)
     if get_mouse_direction((nekox, nekoy), mouse, thr) == "still":
         if run:
             action = "still"
@@ -186,8 +191,11 @@ def updanim():
 
     if action.lower() not in ("still", "alert"):
         canvas.itemconfig(me, image=nekosprites[f"{action}{int(frame)}.png"])
-        if action.lower() in ("yawn", "sleep"):
-            root.after(200)
+        if action.lower() == "sleep":
+            root.after(300)
+        if action.lower() == "yawn":
+            root.after(400)
+        
     else:
         canvas.itemconfig(me, image=nekosprites[f"{action}.png"])
 
@@ -202,21 +210,15 @@ def update():
         nekox,nekoy = tuple(i+c for i,c in zip(go,(nekox,nekoy)))
         canvas.move(me, *go)
     mouse = queryMousePosition()
+    if mouse == (0,0):
+        quitneko()
     root.after(60,update)
 
 def quitneko():
     root.destroy()
     logger.info("Quited.")
-
-
-neko_menu = Menu(tearoff=0)
-neko_menu.add_command(label="Quit",command=quitneko)
-
-
-def showMenu(event):
-    neko_menu.post(event.x_root, event.y_root)
-
-canvas.tag_bind(me, '<Button-1>', showMenu)
+    root.quit()
+    raise SystemExit()
 
 updanim()
 update()
